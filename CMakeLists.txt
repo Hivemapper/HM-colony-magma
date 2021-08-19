@@ -61,26 +61,31 @@ if (UNIX AND CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 endif()
 
 # ----------------------------------------
+# SEEME - bitweeder
+# We disable these checks and settings for our internal builds, instead relying
+# on `–DCMAKE_CXX_STANDARD` and friends being set correctly. Note that the
+# actual code still requires at least C++11/C99, but that shouldn’t be a
+# problem any more unless someone goes out of their way to make it one.
 # use C++11 and C99
 # see http://stackoverflow.com/questions/10851247/how-to-activate-c-11-in-cmake
-include(CheckCXXCompilerFlag)
-include(CheckCCompilerFlag)
-CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
-CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
-if (COMPILER_SUPPORTS_CXX11)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-elseif(COMPILER_SUPPORTS_CXX0X)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
-else()
-    message( WARNING "The compiler ${CMAKE_CXX_COMPILER} doesn't support the -std=c++11 flag. Some code may not compile.")
-endif()
+# include(CheckCXXCompilerFlag)
+# include(CheckCCompilerFlag)
+# CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
+# CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
+# if (COMPILER_SUPPORTS_CXX11)
+#     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+# elseif(COMPILER_SUPPORTS_CXX0X)
+#     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+# else()
+#     message( WARNING "The compiler ${CMAKE_CXX_COMPILER} doesn't support the -std=c++11 flag. Some code may not compile.")
+# endif()
 
-CHECK_C_COMPILER_FLAG("-std=c99" COMPILER_SUPPORTS_C99)
-if (COMPILER_SUPPORTS_C99)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
-else()
-    message( WARNING "The compiler ${CMAKE_C_COMPILER} doesn't support the -std=c99 flag. Some code may not compile.")
-endif()
+# CHECK_C_COMPILER_FLAG("-std=c99" COMPILER_SUPPORTS_C99)
+# if (COMPILER_SUPPORTS_C99)
+#     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
+# else()
+#     message( WARNING "The compiler ${CMAKE_C_COMPILER} doesn't support the -std=c99 flag. Some code may not compile.")
+# endif()
 
 
 # ----------------------------------------
@@ -292,6 +297,17 @@ if (MAGMA_ENABLE_CUDA)
         set( NV_SM ${NV_SM} -gencode arch=compute_80,code=sm_80 )
         set( NV_COMP        -gencode arch=compute_80,code=compute_80 )
         message( STATUS "    compile for CUDA arch 8.0 (Ampere)" )
+    endif()
+
+    # SEEME - bitweeder
+    # We add explicit support for GeForce 30X0-class hardware
+    if (GPU_TARGET MATCHES sm_86)
+        if (NOT MIN_ARCH)
+            set( MIN_ARCH 860 )
+        endif()
+        set( NV_SM ${NV_SM} -gencode arch=compute_86,code=sm_86 )
+        set( NV_COMP        -gencode arch=compute_86,code=compute_86 )
+        message( STATUS "    compile for CUDA arch 8.6 (Ampere)" )
     endif()
 
     if (NOT MIN_ARCH)
