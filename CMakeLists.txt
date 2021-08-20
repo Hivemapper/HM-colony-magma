@@ -314,7 +314,12 @@ if (MAGMA_ENABLE_CUDA)
         message( FATAL_ERROR "GPU_TARGET must contain one or more of Fermi, Kepler, Maxwell, Pascal, Volta, Turing, Ampere, or valid sm_[0-9][0-9]" )
     endif()
 
-    set( CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -Xcompiler -fPIC ${NV_SM} ${NV_COMP} ${FORTRAN_CONVENTION} )
+    # FIXME - bitweeder
+    # Note that there is no flag propagation to `nvcc`, despite claims to the contrary. In particular, we seem to be
+    # defaulting to `std=c++98`, which causes `nvcc` to explode when it find C++11 constructs such as `constexpr`. For
+    # now, we explicitly add C++11 support; we can’t simply pass in `CMAKE_CXX_FLAGS` since - at minimum - `-fopenmp`
+    # and `-std=c99` will choke `nvcc`.
+    set( CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -std=c++14 -Xcompiler -fPIC ${NV_SM} ${NV_COMP} ${FORTRAN_CONVENTION} )
     #add_definitions( "-DMAGMA_HAVE_CUDA -DMAGMA_CUDA_ARCH_MIN=${MIN_ARCH}" )
     set(MAGMA_HAVE_CUDA "1")
     set(MAGMA_CUDA_ARCH_MIN "${MIN_ARCH}")
@@ -401,7 +406,7 @@ if (MAGMA_ENABLE_HIP)
     set_property(TARGET hip::device APPEND PROPERTY COMPATIBLE_INTERFACE_BOOL INTERFACE_HIP_DEVICE_COMPILE)
     set_property(TARGET hip::device PROPERTY INTERFACE_HIP_DEVICE_COMPILE ON)
     set(GPU_ARCH_FLAGS ${DEVCCFLAGS})
-    
+
     #add_compile_options(${GPU_ARCH_FLAGS})
   else()
     message( STATUS "Could not find HIP" )
@@ -537,7 +542,7 @@ if (MAGMA_ENABLE_CUDA)
 else()
   include_directories( magmablas_hip )  # e.g., shuffle.cuh
 endif()
-  
+
 # Need to check sizeof(void*) after setting flags above;
 # CMAKE_SIZEOF_VOID_P can be wrong.
 include( CheckTypeSize )
@@ -617,7 +622,7 @@ else()
 	roc::hipsparse
 	)
     endif()
-    
+
     if (USE_FORTRAN)
         # make list of Fortran .mod files to install
         foreach( filename ${libmagma_all} )
