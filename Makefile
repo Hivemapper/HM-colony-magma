@@ -1,7 +1,7 @@
 #--------------------------------------------------------------------
 # build process
 #
-# 
+#
 
 
 
@@ -41,8 +41,8 @@ NVCC        ?= nvcc
 DEVCC       ?= NONE
 
 # Configuration variables
-HAVE_CUDA  = 
-HAVE_HIP   = 
+HAVE_CUDA  =
+HAVE_HIP   =
 CUDA_ARCH_MIN =
 
 # CMake.src file, which depends on the backend
@@ -60,7 +60,7 @@ else ifeq ($(BACKEND),hip)
     # if we are using HIP, make sure generated sources are up to date
     # Technically, this 'recursive' make which we don't like to do, but also this is a simple solution
     #   that allows that file to handle all code generation
-    # Another reason is that I don't want to flood the namespace (for example, that file also 
+    # Another reason is that I don't want to flood the namespace (for example, that file also
     #   defines an 'all' and 'clean' target as phonies)
     # So, in the future that whole file may be integrated, but for now this seems simplest
 	# Detect number of jobs here, so it runs at an appropriate speed
@@ -87,7 +87,7 @@ FPIC        ?= -fPIC
 
 # now, generate our flags
 CFLAGS      ?= -O3 $(FPIC) -DNDEBUG -DADD_ -Wall -fopenmp -std=c99
-CXXFLAGS    ?= -O3 $(FPIC) -DNDEBUG -DADD_ -Wall -fopenmp -std=c++11
+CXXFLAGS    ?= -O3 $(FPIC) -DNDEBUG -DADD_ -Wall -fopenmp -std=c++14
 FFLAGS      ?= -O3 $(FPIC) -DNDEBUG -DADD_ -Wall -Wno-unused-dummy-argument
 F90FLAGS    ?= -O3 $(FPIC) -DNDEBUG -DADD_ -Wall -Wno-unused-dummy-argument -x f95-cpp-input
 LDFLAGS     ?=     $(FPIC)                       -fopenmp
@@ -126,7 +126,7 @@ ifeq ($(BACKEND),cuda)
 
 	# Add legacy flags
 	DEVCCFLAGS += $(NVCCFLAGS)
-	
+
 	# ------------------------------------------------------------------------------
 	# NVCC options for the different cards
 	# First, add smXX for architecture names
@@ -138,7 +138,7 @@ ifeq ($(BACKEND),cuda)
 		CUDA_ARCH_ += sm_35
 	endif
 	ifneq ($(findstring Maxwell, $(GPU_TARGET)),)
-		CUDA_ARCH_ += sm_50
+		CUDA_ARCH_ += sm_50 sm_52
 	endif
 	ifneq ($(findstring Pascal, $(GPU_TARGET)),)
 		CUDA_ARCH_ += sm_60
@@ -150,7 +150,7 @@ ifeq ($(BACKEND),cuda)
 		CUDA_ARCH_ += sm_75
 	endif
 	ifneq ($(findstring Ampere, $(GPU_TARGET)),)
-		CUDA_ARCH_ += sm_80
+		CUDA_ARCH_ += sm_80 sm_86
 	endif
 
 
@@ -452,7 +452,7 @@ $(libmagma_obj):       MAGMA_INC += -I./control
 $(libtest_obj):        MAGMA_INC += -I./testing
 $(testing_obj):        MAGMA_INC += -I./testing
 
-ifeq ($(BACKEND),cuda) 
+ifeq ($(BACKEND),cuda)
 $(libsparse_obj):      MAGMA_INC += -I./control -I./magmablas -I./sparse/include -I./sparse/control
 $(sparse_testing_obj): MAGMA_INC += -I./sparse/include -I./sparse/control -I./testing
 else ifeq ($(BACKEND),hip)
@@ -480,7 +480,7 @@ ALLFLAGS := $(CFLAGS) $(CXXFLAGS) $(DEVCCFLAGS)
 # Configuration header
 ifneq (,$(HAVE_CUDA))
 
-$(CONFIG): $(CONFIGDEPS) 
+$(CONFIG): $(CONFIGDEPS)
 	cp $< $@
 	sed -i -e 's/#cmakedefine MAGMA_CUDA_ARCH_MIN @MAGMA_CUDA_ARCH_MIN@/#define MAGMA_CUDA_ARCH_MIN $(CUDA_ARCH_MIN)/g' $@
 	sed -i -e 's/#cmakedefine MAGMA_HAVE_CUDA/#define MAGMA_HAVE_CUDA/g' $@
@@ -488,7 +488,7 @@ $(CONFIG): $(CONFIGDEPS)
 
 else
 
-$(CONFIG): $(CONFIGDEPS) 
+$(CONFIG): $(CONFIGDEPS)
 	cp $< $@
 	sed -i -e 's/#cmakedefine MAGMA_CUDA_ARCH_MIN @MAGMA_CUDA_ARCH_MIN@/#define MAGMA_CUDA_ARCH_MIN $(CUDA_ARCH_MIN)/g' $@
 	sed -i -e 's/#cmakedefine MAGMA_HAVE_CUDA/#undef MAGMA_HAVE_CUDA/g' $@
@@ -821,7 +821,7 @@ sparse/testing/clean:
 %.$(o_ext): %.F90 $(PTREXEC)
 	$(FORT) $(F90FLAGS) $(CPPFLAGS) $(PTROPT) -c -o $@ $<
 	-mv $(notdir $(basename $@)).mod include/
- 
+
 %.$(o_ext): %.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
 
@@ -975,7 +975,7 @@ INSTALL_FLAGS := $(filter-out \
 	-DMAGMA_CUDA_ARCH_MIN=100 -DMAGMA_CUDA_ARCH_MIN=200 -DMAGMA_CUDA_ARCH_MIN=300 \
 	-DMAGMA_CUDA_ARCH_MIN=350 -DMAGMA_CUDA_ARCH_MIN=500 -DMAGMA_CUDA_ARCH_MIN=600 -DMAGMA_CUDA_ARCH_MIN=610 \
 	-DMAGMA_HAVE_CUDA -DMAGMA_HAVE_HIP -DMAGMA_HAVE_clBLAS \
-	-fno-strict-aliasing -fPIC -O0 -O1 -O2 -O3 -pedantic -std=c99 -stdc++98 -stdc++11 \
+	-fno-strict-aliasing -fPIC -O0 -O1 -O2 -O3 -pedantic -std=c99 -std=c11 -stdc++98 -stdc++11 -stdc++0x -stdc++14 -stdc++1y -stdc++17 -stdc++1z -stdc++20 -stdc++2a \
 	-Wall -Wshadow -Wno-long-long, $(CFLAGS))
 
 INSTALL_LDFLAGS := $(filter-out -fPIC -Wall, $(LDFLAGS))

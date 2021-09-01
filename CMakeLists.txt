@@ -1,4 +1,6 @@
-cmake_minimum_required( VERSION 2.8.1 )
+# SEEME - bitweeder
+# Version chosen arbitrarily to be something released since the Dark Ages.
+cmake_minimum_required( VERSION 3.12.0 )
 
 # ----------------------------------------
 # to disable Fortran, set this to "off"
@@ -60,32 +62,23 @@ if (UNIX AND CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set(CMAKE_INSTALL_PREFIX "/usr/local/magma" CACHE PATH "..." FORCE)
 endif()
 
+
 # ----------------------------------------
 # SEEME - bitweeder
-# We disable these checks and settings for our internal builds, instead relying
-# on `–DCMAKE_CXX_STANDARD` and friends being set correctly. Note that the
-# actual code still requires at least C++11/C99, but that shouldn’t be a
-# problem any more unless someone goes out of their way to make it one.
-# use C++11 and C99
-# see http://stackoverflow.com/questions/10851247/how-to-activate-c-11-in-cmake
-# include(CheckCXXCompilerFlag)
-# include(CheckCCompilerFlag)
-# CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
-# CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
-# if (COMPILER_SUPPORTS_CXX11)
-#     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-# elseif(COMPILER_SUPPORTS_CXX0X)
-#     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
-# else()
-#     message( WARNING "The compiler ${CMAKE_CXX_COMPILER} doesn't support the -std=c++11 flag. Some code may not compile.")
-# endif()
+# We remove the original checks and settings around C/C++ standards for
+# our internal builds, instead relying on `–DCMAKE_CXX_STANDARD` and
+# friends being set correctly. Strictly speaking, this should be
+# unnecessary since CMake itself should handle configuring the compiler
+# flags. We do it anyway since they weren’t being consistently propagated.
+if (DEFINED CMAKE_CXX_STANDARD)
+    set( CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -std=c++${CMAKE_CXX_STANDARD} )
+elseif (DEFINED CXX_STANDARD)
+    set( CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -std=c++${CXX_STANDARD} )
+else()
+    set( CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -std=c++11 )
+endif()
 
-# CHECK_C_COMPILER_FLAG("-std=c99" COMPILER_SUPPORTS_C99)
-# if (COMPILER_SUPPORTS_C99)
-#     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
-# else()
-#     message( WARNING "The compiler ${CMAKE_C_COMPILER} doesn't support the -std=c99 flag. Some code may not compile.")
-# endif()
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
 
 
 # ----------------------------------------
@@ -314,12 +307,23 @@ if (MAGMA_ENABLE_CUDA)
         message( FATAL_ERROR "GPU_TARGET must contain one or more of Fermi, Kepler, Maxwell, Pascal, Volta, Turing, Ampere, or valid sm_[0-9][0-9]" )
     endif()
 
-    # FIXME - bitweeder
-    # Note that there is no flag propagation to `nvcc`, despite claims to the contrary. In particular, we seem to be
-    # defaulting to `std=c++98`, which causes `nvcc` to explode when it find C++11 constructs such as `constexpr`. For
-    # now, we explicitly add C++11 support; we can’t simply pass in `CMAKE_CXX_FLAGS` since - at minimum - `-fopenmp`
-    # and `-std=c99` will choke `nvcc`.
-    set( CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -std=c++14 -Xcompiler -fPIC ${NV_SM} ${NV_COMP} ${FORTRAN_CONVENTION} )
+    # SEEME - bitweeder
+    # Note that there is no flag propagation to `nvcc`, despite claims
+    # to the contrary. In particular, we seem to be defaulting to
+    # `std=c++98`, which causes `nvcc` to explode when it finds C++11
+    # constructs such as `constexpr`. For now, we explicitly propagate
+    # the C++ `std` setting, if provided, or default to `std=c++11`.
+    # Note that we can’t simply pass in `CMAKE_CXX_FLAGS` since - at
+    # minimum - `-fopenmp` and `-std=c99` will choke `nvcc`.
+    if (DEFINED CMAKE_CXX_STANDARD)
+      set( CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -std=c++${CMAKE_CXX_STANDARD} )
+    elseif (DEFINED CXX_STANDARD)
+      set( CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -std=c++${CXX_STANDARD} )
+    else()
+      set( CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -std=c++11 )
+    endif()
+
+    set( CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -Xcompiler -fPIC ${NV_SM} ${NV_COMP} ${FORTRAN_CONVENTION} )
     #add_definitions( "-DMAGMA_HAVE_CUDA -DMAGMA_CUDA_ARCH_MIN=${MIN_ARCH}" )
     set(MAGMA_HAVE_CUDA "1")
     set(MAGMA_CUDA_ARCH_MIN "${MIN_ARCH}")
