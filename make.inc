@@ -41,8 +41,10 @@ RANLIB    = ranlib
 FPIC      = -fPIC
 
 CFLAGS    = -O3 $(FPIC) -fopenmp -DNDEBUG -DADD_ -Wall -Wshadow -DMAGMA_NOAFFINITY
+#CFLAGS    = -O3 $(FPIC) -fopenmp -DNDEBUG -DADD_ -Wall -Wno-strict-aliasing -Wshadow -DMAGMA_WITH_MKL
 FFLAGS    = -O3 $(FPIC)          -DNDEBUG -DADD_ -Wall -Wno-unused-dummy-argument
 NVCCFLAGS = -O3                  -DNDEBUG -DADD_ -Xcompiler "$(FPIC) -Wall -Wno-unused-function" -std=c++14
+#NVCCFLAGS = -O3                  -DNDEBUG -DADD_ -Xcompiler "$(FPIC) -Wall -Wno-unused-function -Wno-strict-aliasing" -std=c++14
 LDFLAGS   =     $(FPIC) -fopenmp
 
 # Options to do extra checks for non-standard things like variable length arrays;
@@ -58,6 +60,12 @@ CFLAGS   += -std=c99
 # --------------------
 # libraries
 
+# see MKL Link Advisor at http://software.intel.com/sites/products/mkl/
+# gcc/gfortran with MKL 10.3, GNU OpenMP threads (use -fopenmp in CFLAGS, LDFLAGS)
+# Supposedly, gcc can use Intel threads (libiomp5) instead, but be careful that
+# libiomp5 and libgomp are NOT BOTH linked.
+#LIB       = -lmkl_gf_lp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lstdc++ -lm
+#LIB       = -lmkl_gf_lp64 -lmkl_gnu_thread -lmkl_core -liomp5 -lpthread -lstdc++ -lm
 LIB       = -lgomp -lpthread -lstdc++ -lm
 LIB      += -lcublas -lcusparse -lcudart -lcudadevrt
 
@@ -66,9 +74,15 @@ LIB      += -lcublas -lcusparse -lcudart -lcudadevrt
 # directories
 
 # define library directories preferably in your environment, or here.
-#CUDADIR ?= /usr/local/cuda
+#MKLROOT ?= /opt/intel/composerxe/mkl
+CUDADIR ?= /usr/local/cuda
+#-include make.check-mkl
 -include make.check-cuda
 
-LIBDIR    = -L$(CUDADIR)/lib64 \
+LIBDIR    = -L$(CUDADIR)/lib64
+#LIBDIR    = -L$(CUDADIR)/lib64 \
+#            -L$(MKLROOT)/lib/intel64
 
-INC       = -I$(CUDADIR)/include \
+INC       = -I$(CUDADIR)/include
+#INC       = -I$(CUDADIR)/include \
+#            -I$(MKLROOT)/include
