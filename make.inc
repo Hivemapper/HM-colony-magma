@@ -56,6 +56,8 @@ CFLAGS   += -pedantic -Wno-long-long
 CXXFLAGS := $(CFLAGS) -std=c++14
 CFLAGS   += -std=c99
 
+prefix   = /usr/local
+
 
 # --------------------
 # libraries
